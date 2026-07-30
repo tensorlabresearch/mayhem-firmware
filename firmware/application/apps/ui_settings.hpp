@@ -1016,6 +1016,7 @@ class SetThemeView : public View {
             {"Green", 3},
             {"Red", 4},
             {"Dark", 5},
+            {"Tensor Lab", 6},
         },
         true};
 

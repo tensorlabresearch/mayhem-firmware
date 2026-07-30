@@ -98,6 +98,11 @@ class ThemeDark : public ThemeTemplate {
     ThemeDark();
 };
 
+class ThemeTensorLab : public ThemeTemplate {
+   public:
+    ThemeTensorLab();
+};
+
 class Theme {
    public:
     enum ThemeId {
@@ -107,6 +112,7 @@ class Theme {
         Green = 3,
         Red = 4,
         Dark = 5,
+        TensorLab = 6,
         MAX
     };
     static ThemeTemplate* getInstance();

@@ -33,6 +33,9 @@ void Theme::SetTheme(ThemeId theme) {
         case Dark:
             current = new ThemeDark();
             break;
+        case TensorLab:
+            current = new ThemeTensorLab();
+            break;
         case DefaultGrey:
         default:
             current = new ThemeDefault();
@@ -864,6 +867,151 @@ ThemeDark::ThemeDark() {
     status_active = new Color{0, 255, 0};
 
     bg_table_header = new Color{48, 48, 48};
+}
+
+/* Tensor Lab theme.
+ * Palette lifted from tensorlab-custom.css:
+ *   black #050203  black-soft #130408  red-deep #3d050d
+ *   red   #b61225  red-hot    #ef233c
+ *   ink   #fff5ef  muted      #ead1ca  dim #c28d87
+ *
+ * Deliberate exception: ok_dark, warning_dark, fg_green and status_active stay
+ * conventionally coloured rather than brand red. This is a TX-capable radio --
+ * repainting "good/active" in the same red used for errors and transmit state
+ * would be an actively unsafe piece of branding. Brand identity is carried by
+ * the background ladder, option_active and bg_table_header instead.
+ */
+ThemeTensorLab::ThemeTensorLab() {
+    bg_lightest = new Style{
+        .font = font::fixed_8x16,
+        .background = {61, 5, 13},
+        .foreground = {255, 245, 239},
+    };
+    bg_lightest_small = new Style{
+        .font = font::fixed_5x8,
+        .background = {61, 5, 13},
+        .foreground = {255, 245, 239},
+    };
+    bg_light = new Style{
+        .font = font::fixed_8x16,
+        .background = {48, 4, 11},
+        .foreground = {255, 245, 239},
+    };
+    bg_medium = new Style{
+        .font = font::fixed_8x16,
+        .background = {36, 4, 9},
+        .foreground = {255, 245, 239},
+    };
+    bg_dark = new Style{
+        .font = font::fixed_8x16,
+        .background = {19, 4, 8},
+        .foreground = {255, 245, 239},
+    };
+    bg_darker = new Style{
+        .font = font::fixed_8x16,
+        .background = {11, 3, 5},
+        .foreground = {255, 245, 239},
+    };
+
+    bg_darkest = new Style{
+        .font = font::fixed_8x16,
+        .background = {5, 2, 3},
+        .foreground = {255, 245, 239},
+    };
+    bg_darkest_small = new Style{
+        .font = font::fixed_5x8,
+        .background = {5, 2, 3},
+        .foreground = {255, 245, 239},
+    };
+
+    bg_important_small = new Style{
+        .font = font::fixed_5x8,
+        .background = {182, 18, 37},
+        .foreground = {255, 245, 239},
+    };
+
+    error_dark = new Style{
+        .font = font::fixed_8x16,
+        .background = {5, 2, 3},
+        .foreground = {255, 61, 84},
+    };
+    warning_dark = new Style{
+        .font = font::fixed_8x16,
+        .background = {5, 2, 3},
+        .foreground = {255, 176, 64},
+    };
+    ok_dark = new Style{
+        .font = font::fixed_8x16,
+        .background = {5, 2, 3},
+        .foreground = {64, 208, 112},
+    };
+
+    fg_dark = new Style{
+        .font = font::fixed_8x16,
+        .background = {5, 2, 3},
+        .foreground = {112, 82, 80},
+    };
+    fg_medium = new Style{
+        .font = font::fixed_8x16,
+        .background = {5, 2, 3},
+        .foreground = {194, 141, 135},
+    };
+    fg_light = new Style{
+        .font = font::fixed_8x16,
+        .background = {5, 2, 3},
+        .foreground = {255, 245, 239},
+    };
+
+    fg_red = new Style{
+        .font = font::fixed_8x16,
+        .background = {5, 2, 3},
+        .foreground = {239, 35, 60},
+    };
+    fg_green = new Style{
+        .font = font::fixed_8x16,
+        .background = {5, 2, 3},
+        .foreground = {64, 208, 112},
+    };
+    fg_yellow = new Style{
+        .font = font::fixed_8x16,
+        .background = {5, 2, 3},
+        .foreground = {255, 214, 102},
+    };
+    fg_orange = new Style{
+        .font = font::fixed_8x16,
+        .background = {5, 2, 3},
+        .foreground = {255, 150, 64},
+    };
+    fg_blue = new Style{
+        .font = font::fixed_8x16,
+        .background = {5, 2, 3},
+        .foreground = {96, 150, 255},
+    };
+    fg_cyan = new Style{
+        .font = font::fixed_8x16,
+        .background = {5, 2, 3},
+        .foreground = {96, 220, 232},
+    };
+    fg_darkcyan = new Style{
+        .font = font::fixed_8x16,
+        .background = {5, 2, 3},
+        .foreground = {48, 132, 144},
+    };
+    fg_magenta = new Style{
+        .font = font::fixed_8x16,
+        .background = {5, 2, 3},
+        .foreground = {224, 112, 192},
+    };
+
+    option_active = new Style{
+        .font = font::fixed_8x16,
+        .background = {182, 18, 37},
+        .foreground = {255, 245, 239},
+    };
+
+    status_active = new Color{64, 208, 112};
+
+    bg_table_header = new Color{61, 5, 13};
 }
 
 }  // namespace ui
