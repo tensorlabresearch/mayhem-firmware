@@ -241,6 +241,10 @@ set(EXTCPPSRC
 	external/level/main.cpp
 	external/level/ui_level.cpp
 
+	#tl_logo (Tensor Lab branded backdrop)
+	external/tl_logo/main.cpp
+	external/tl_logo/ui_tl_logo.cpp
+
 	#gfxEQ 80 byte
 	external/gfxeq/main.cpp
 	external/gfxeq/ui_gfxeq.cpp	
@@ -451,6 +455,7 @@ set(EXTAPPLIST
 	debug_pmem
 	scanner
 	level
+	tl_logo
 	gfxeq
 	waterfall_designer
 	detector_rx
