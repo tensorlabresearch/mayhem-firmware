@@ -24,4 +24,9 @@
 # external app address ranges below must match those in linker file "external.ld"
 maximum_application_size = 32*1024
 external_apps_address_start = 0xADB00000
-external_apps_address_end = 0xAE0B0000
+# NOTE: this was 0xAE0B0000, which had fallen behind external.ld -- upstream's
+# tetra_rx already sits at 0xAE0C0000 and our tl_logo at 0xAE0D0000, so both were
+# outside the range and the "possible external code address" leak scan in
+# make_spi_image.py silently skipped them. Keep this ABOVE the highest org in
+# external.ld or leaked references to app code will not be reported.
+external_apps_address_end = 0xAE200000

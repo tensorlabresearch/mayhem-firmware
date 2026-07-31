@@ -116,7 +116,6 @@ MEMORY
     ram_external_app_signal_hunter         (rwx) : org = 0xAE0B0000, len = 32k
     ram_external_app_tetra_rx              (rwx) : org = 0xAE0C0000, len = 32k
     ram_external_app_tl_logo               (rwx) : org = 0xAE0D0000, len = 32k
-    ram_external_app_rf_notebook           (rwx) : org = 0xAE0E0000, len = 32k
 }
 
 SECTIONS
@@ -679,11 +678,6 @@ SECTIONS
         *(*ui*external_app*tl_logo*);
     } > ram_external_app_tl_logo
 
-    .external_app_rf_notebook : ALIGN(4) SUBALIGN(4)
-    {
-        KEEP(*(.external_app.app_rf_notebook.application_information));
-        *(*ui*external_app*rf_notebook*);
-    } > ram_external_app_rf_notebook
 
 
 
