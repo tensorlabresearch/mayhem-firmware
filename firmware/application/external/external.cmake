@@ -245,6 +245,10 @@ set(EXTCPPSRC
 	external/tl_logo/main.cpp
 	external/tl_logo/ui_tl_logo.cpp
 
+	#rf_notebook (Tensor Lab RF observation log)
+	external/rf_notebook/main.cpp
+	external/rf_notebook/ui_rf_notebook.cpp
+
 	#gfxEQ 80 byte
 	external/gfxeq/main.cpp
 	external/gfxeq/ui_gfxeq.cpp	
@@ -456,6 +460,7 @@ set(EXTAPPLIST
 	scanner
 	level
 	tl_logo
+	rf_notebook
 	gfxeq
 	waterfall_designer
 	detector_rx
