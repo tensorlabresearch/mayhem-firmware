@@ -12,8 +12,8 @@ set(EXTCPPSRC
 	external/font_viewer/ui_font_viewer.cpp
 
 	#blespam 336 bytes - array initializers?
-	external/blespam/main.cpp
-	external/blespam/ui_blespam.cpp
+	#external/blespam/main.cpp
+	#external/blespam/ui_blespam.cpp
 
 	#analogtv 552 bytes 
 	external/analogtv/main.cpp
@@ -25,40 +25,40 @@ set(EXTCPPSRC
 	external/nrf_rx/ui_nrf_rx.cpp
 
 	#coasterp  0 byte
-	external/coasterp/main.cpp
-	external/coasterp/ui_coasterp.cpp
+	#external/coasterp/main.cpp
+	#external/coasterp/ui_coasterp.cpp
 
 	#lge  120 byte
-	external/lge/main.cpp
-	external/lge/lge_app.cpp
-	external/lge/rfm69.cpp
+	#external/lge/main.cpp
+	#external/lge/lge_app.cpp
+	#external/lge/rfm69.cpp
 
 	#lcr - 460 byte flash
 	external/lcr/main.cpp
 	external/lcr/ui_lcr.cpp
 
 	#jammer 144 byte
-	external/jammer/main.cpp
-	external/jammer/ui_jammer.cpp
+	#external/jammer/main.cpp
+	#external/jammer/ui_jammer.cpp
 
 	#gpssim  160 byte
-	external/gpssim/main.cpp
-	external/gpssim/gps_sim_app.cpp
+	#external/gpssim/main.cpp
+	#external/gpssim/gps_sim_app.cpp
 
 	#spainter   464 byte
-	external/spainter/main.cpp
-	external/spainter/ui_spectrum_painter.cpp
-	external/spainter/ui_spectrum_painter_text.cpp
-	external/spainter/ui_spectrum_painter_image.cpp
+	#external/spainter/main.cpp
+	#external/spainter/ui_spectrum_painter.cpp
+	#external/spainter/ui_spectrum_painter_text.cpp
+	#external/spainter/ui_spectrum_painter_image.cpp
 
 	#keyfob 216 byte
-	external/keyfob/main.cpp
-	external/keyfob/ui_keyfob.cpp
-	external/keyfob/ui_keyfob.hpp
+	#external/keyfob/main.cpp
+	#external/keyfob/ui_keyfob.cpp
+	#external/keyfob/ui_keyfob.hpp
 
 	#tetris 88 byte
-	external/tetris/main.cpp
-	external/tetris/ui_tetris.cpp
+	#external/tetris/main.cpp
+	#external/tetris/ui_tetris.cpp
 
 
 	#extsensors 192 byte
@@ -84,32 +84,32 @@ set(EXTCPPSRC
 	external/tpmsrx/tpms_app.cpp
 
 	#tpmstx 800 bytes - TPMS transmit with editable fields
-	external/tpmstx/main.cpp
-	external/tpmstx/tpms_tx_app.cpp
+	#external/tpmstx/main.cpp
+	#external/tpmstx/tpms_tx_app.cpp
 
 	#protoview 8 byte
 	external/protoview/main.cpp
 	external/protoview/ui_protoview.cpp
 
 	#adsbtx  3544 byte - adsb shared part
-	external/adsbtx/main.cpp
-	external/adsbtx/ui_adsb_tx.cpp
+	#external/adsbtx/main.cpp
+	#external/adsbtx/ui_adsb_tx.cpp
 
 	#morse_tx 768 bytes -- disabled because of the new morse tx app with more functions
 	#external/morse_tx/main.cpp
 	#external/morse_tx/ui_morse.cpp
 
 	#sstvtx 456 bytes
-	external/sstvtx/main.cpp
-	external/sstvtx/ui_sstvtx.cpp
+	#external/sstvtx/main.cpp
+	#external/sstvtx/ui_sstvtx.cpp
 
 	#same_tx
-	external/same_tx/main.cpp
-	external/same_tx/ui_same_tx.cpp
+	#external/same_tx/main.cpp
+	#external/same_tx/ui_same_tx.cpp
 
 	#mdc_tx
-	external/mdc_tx/main.cpp
-	external/mdc_tx/ui_mdc_tx.cpp
+	#external/mdc_tx/main.cpp
+	#external/mdc_tx/ui_mdc_tx.cpp
 
 	#sstvrx
 	external/sstvrx/main.cpp
@@ -138,33 +138,33 @@ set(EXTCPPSRC
 	external/vor_rx/ui_vor_rx.cpp
 
 	#vor_tx
-	external/vor_tx/main.cpp
-	external/vor_tx/ui_vor_tx.cpp
+	#external/vor_tx/main.cpp
+	#external/vor_tx/ui_vor_tx.cpp
 
 	#shoppingcart_lock 272 bytes
-	external/shoppingcart_lock/main.cpp
-	external/shoppingcart_lock/shoppingcart_lock.cpp
+	#external/shoppingcart_lock/main.cpp
+	#external/shoppingcart_lock/shoppingcart_lock.cpp
 
 
 	#ookbrute  80 byte
-	external/ookbrute/main.cpp
-	external/ookbrute/ui_ookbrute.cpp
+	#external/ookbrute/main.cpp
+	#external/ookbrute/ui_ookbrute.cpp
 
 	#ook_editor  1808 bytes
 	external/ook_editor/main.cpp
 	external/ook_editor/ui_ook_editor.cpp
 
 	#cvs_spam 24 byte
-	external/cvs_spam/main.cpp
-	external/cvs_spam/cvs_spam.cpp
+	#external/cvs_spam/main.cpp
+	#external/cvs_spam/cvs_spam.cpp
 
 	#flippertx  712 bytes
-	external/flippertx/main.cpp
-	external/flippertx/ui_flippertx.cpp
+	#external/flippertx/main.cpp
+	#external/flippertx/ui_flippertx.cpp
 
 	#remote 1664 bytes
-	external/remote/main.cpp
-	external/remote/ui_remote.cpp
+	#external/remote/main.cpp
+	#external/remote/ui_remote.cpp
 
 	#mcu_temperature    112
 	external/mcu_temperature/main.cpp
@@ -188,8 +188,8 @@ set(EXTCPPSRC
 	external/app_manager/ui_app_manager.cpp
 
 	#hopper 472 bytes
-	external/hopper/main.cpp
-	external/hopper/ui_hopper.cpp
+	#external/hopper/main.cpp
+	#external/hopper/ui_hopper.cpp
 
 	# whip calculator  48 bytes
 	external/antenna_length/main.cpp
@@ -209,8 +209,8 @@ set(EXTCPPSRC
 	external/playlist_editor/ui_playlist_editor.cpp
 
 	#snake 240 bytes
-	external/snake/main.cpp
-	external/snake/ui_snake.cpp
+	#external/snake/main.cpp
+	#external/snake/ui_snake.cpp
 
 
 	#stopwatch 0
@@ -218,16 +218,16 @@ set(EXTCPPSRC
 	external/stopwatch/ui_stopwatch.cpp
 
 	#breakout 1144 bytes
-	external/breakout/main.cpp
-	external/breakout/ui_breakout.cpp
+	#external/breakout/main.cpp
+	#external/breakout/ui_breakout.cpp
 
 	#dinogame 0 
-	external/dinogame/main.cpp
-	external/dinogame/ui_dinogame.cpp
+	#external/dinogame/main.cpp
+	#external/dinogame/ui_dinogame.cpp
 
 	#doom 224
-	external/doom/main.cpp
-	external/doom/ui_doom.cpp
+	#external/doom/main.cpp
+	#external/doom/ui_doom.cpp
 
 	#debug_pmem  944 byte
 	external/debug_pmem/main.cpp
@@ -259,16 +259,16 @@ set(EXTCPPSRC
 	external/detector_rx/ui_detector_rx.cpp
 
 	#space_invaders  0 byte
-	external/spaceinv/main.cpp
-	external/spaceinv/ui_spaceinv.cpp
+	#external/spaceinv/main.cpp
+	#external/spaceinv/ui_spaceinv.cpp
 
 	#blackjack 24 byte
-	external/blackjack/main.cpp
-	external/blackjack/ui_blackjack.cpp
+	#external/blackjack/main.cpp
+	#external/blackjack/ui_blackjack.cpp
 
 	#battleship  256 byte
-	external/battleship/main.cpp
-	external/battleship/ui_battleship.cpp
+	#external/battleship/main.cpp
+	#external/battleship/ui_battleship.cpp
 
 	#ert 3040 bytes - has common with baseband, could be renamed the namespace, so both could have it, but not kept in fw.
 	external/ert/main.cpp
@@ -283,29 +283,29 @@ set(EXTCPPSRC
 	external/epirb_rx/location.cpp
 
 	#epirb_tx
-	external/epirb_tx/main.cpp
-	external/epirb_tx/ui_epirb_tx.cpp
+	#external/epirb_tx/main.cpp
+	#external/epirb_tx/ui_epirb_tx.cpp
 
 	#soundboard  272byte  - 1236 bytes
-	external/soundboard/main.cpp
-	external/soundboard/soundboard_app.cpp
+	#external/soundboard/main.cpp
+	#external/soundboard/soundboard_app.cpp
 
 	#game2048   - 168 byte flash
-	external/game2048/main.cpp
-	external/game2048/ui_game2048.cpp
+	#external/game2048/main.cpp
+	#external/game2048/ui_game2048.cpp
 
 	#bht_tx - 3920 byte flash, unknown
-	external/bht_tx/main.cpp
-	external/bht_tx/ui_bht_tx.cpp
-	external/bht_tx/bht.cpp
+	#external/bht_tx/main.cpp
+	#external/bht_tx/ui_bht_tx.cpp
+	#external/bht_tx/bht.cpp
 
 	#morse_practice - 80 byte flash - bc of array initializers
 	external/morse_practice/main.cpp
 	external/morse_practice/ui_morse_practice.cpp
 
 	#adult_toys_controller  144 bytes 
-	external/adult_toys_controller/main.cpp
-	external/adult_toys_controller/ui_adult_toys_controller.cpp
+	#external/adult_toys_controller/main.cpp
+	#external/adult_toys_controller/ui_adult_toys_controller.cpp
 
 	#flex_rx
 	external/flex_rx/main.cpp
@@ -324,12 +324,12 @@ set(EXTCPPSRC
 	external/morse_radio/ui_morse_radio.cpp
 
 	#morseradiotx
-	external/morseradiotx/main.cpp
-	external/morseradiotx/ui_morse_radiotx.cpp
+	#external/morseradiotx/main.cpp
+	#external/morseradiotx/ui_morse_radiotx.cpp
 
 	#keeloqtx
-  	external/keeloqtx/main.cpp
-  	external/keeloqtx/ui_keeloqtx.cpp
+  	#external/keeloqtx/main.cpp
+  	#external/keeloqtx/ui_keeloqtx.cpp
 
 	#rtty_rx
 	external/rtty_rx/main.cpp
@@ -337,13 +337,13 @@ set(EXTCPPSRC
 	external/rtty_rx/baudot.cpp
 
 	#rtty_tx
-	external/rtty_tx/main.cpp
-	external/rtty_tx/ui_rtty_tx.cpp
-	external/rtty_tx/baudot.cpp
+	#external/rtty_tx/main.cpp
+	#external/rtty_tx/ui_rtty_tx.cpp
+	#external/rtty_tx/baudot.cpp
 
 	#pocsag_tx
-	external/pocsag_tx/main.cpp
-	external/pocsag_tx/ui_pocsag_tx.cpp
+	#external/pocsag_tx/main.cpp
+	#external/pocsag_tx/ui_pocsag_tx.cpp
 
 	#flex_tx
 	external/flex_tx/main.cpp
@@ -362,12 +362,12 @@ set(EXTCPPSRC
 	external/fpv_detect/ui_fpv_detect.cpp
 
 	#p25_tx
-	external/p25_tx/main.cpp
-	external/p25_tx/ui_p25_tx.cpp
+	#external/p25_tx/main.cpp
+	#external/p25_tx/ui_p25_tx.cpp
 
 	#two_tone_pager
-	external/two_tone_pager/main.cpp
-	external/two_tone_pager/ui_two_tone_pager.cpp
+	#external/two_tone_pager/main.cpp
+	#external/two_tone_pager/ui_two_tone_pager.cpp
 
 	#two_tone_rx
 	external/two_tone_rx/main.cpp
@@ -378,9 +378,9 @@ set(EXTCPPSRC
 	external/hard_reset/ui_hard_reset.cpp
 
 	#secplustx
-	external/secplustx/main.cpp
-	external/secplustx/ui_secplustx.cpp
-	external/secplustx/secplustx.cpp
+	#external/secplustx/main.cpp
+	#external/secplustx/ui_secplustx.cpp
+	#external/secplustx/secplustx.cpp
 
   #signal_hunter
   external/signal_hunter/main.cpp
@@ -402,57 +402,33 @@ set(EXTAPPLIST
 	afsk_rx
 	calculator
 	font_viewer
-	blespam
 	analogtv
 	nrf_rx
-	coasterp
-	lge
 	lcr
-	jammer
-	gpssim
-	spainter
-	keyfob
-	tetris
 	extsensors
 	foxhunt_rx
 	audio_test
 	wardrivemap
 	tpmsrx
-	tpmstx
 	protoview
-	adsbtx
 	#morse_tx
-	sstvtx
-	same_tx
-	mdc_tx
 	sstvrx
 	random_password
 	acars_rx
 	wefax_rx
 	noaaapt_rx
 	vor_rx
-	vor_tx
-	shoppingcart_lock
-	ookbrute
 	ook_editor
-	cvs_spam
-	flippertx
-	remote
 	mcu_temperature
 	fmradio
 	tuner
 	metronome
 	app_manager
-	hopper
 	antenna_length
 	view_wav
 	sd_wipe
 	playlist_editor
-	snake
 	stopwatch
-	breakout
-	dinogame
-	doom
 	debug_pmem
 	scanner
 	level
@@ -461,34 +437,19 @@ set(EXTAPPLIST
 	waterfall_designer
 	detector_rx
 	fpv_detect
-	spaceinv
-	blackjack
-	battleship
 	ert
 	epirb_rx
-	epirb_tx
-	soundboard
-	game2048
-	bht_tx
 	morse_practice
-	adult_toys_controller
 	flex_rx
 	subcarrx
 	siggen
 	morse_radio
-	morseradiotx
-	keeloqtx
 	rtty_rx
-	rtty_tx
-	pocsag_tx
 	flex_tx
 	time_sink
 	kiss_tnc
-	p25_tx
-	two_tone_pager
 	two_tone_rx
 	hard_reset
-	secplustx
   signal_hunter
 	tetra_rx
 )
