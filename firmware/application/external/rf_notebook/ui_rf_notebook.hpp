@@ -23,10 +23,16 @@
  * rf_field_notebook_project_plan.md ("PortaPack manual event capture").
  *
  * Scope deliberately limited to the plan's conference MVP: manual MARK creates
- * an event, metadata is appended to events.jsonl, a .rfsk spectral sketch is
- * written, and a compact summary is offered to the phone. No scanning, no
- * automatic detection, no scoring model, no transmit -- those are Milestones 3+
- * and the plan is explicit that manual capture must be solid first.
+ * an event, metadata is appended to events.jsonl, and a .rfsk spectral sketch is
+ * written. No scanning, no automatic detection, no scoring model, no transmit --
+ * those are Milestones 3+ and the plan is explicit that manual capture must be
+ * solid first.
+ *
+ * Standalone by design: the SD card is the only output. The companion-device
+ * side of the plan (sections 3.2, 9, 10) is deliberately NOT implemented -- it
+ * is being deferred until the PortaPack has a wifi module, at which point the
+ * transport will not be USB Web Serial and the protocol will need redesigning
+ * anyway.
  */
 
 #ifndef _UI_RF_NOTEBOOK
@@ -56,9 +62,9 @@ class RFNotebookView : public View {
    private:
     NavigationView& nav_;
 
-    /* Session identity. The plan makes the phone the authority on session UUID
-     * and UTC; until it sends one we mint a device-local id from the RTC so the
-     * device is useful standalone (plan section 2.7, graceful disconnection). */
+    /* Session identity, minted device-local from the RTC. The plan envisaged a
+     * companion device supplying a UUID and UTC anchor; with that deferred, the
+     * device is the sole authority and the importer keys on this id. */
     std::string session_id_{};
     std::filesystem::path session_dir_{};
     uint32_t event_seq_{0};
@@ -88,7 +94,6 @@ class RFNotebookView : public View {
                       uint8_t nf, uint16_t peak, uint32_t obw);
     bool append_event(uint32_t seq, const std::array<uint8_t, rfsk::bins>& avg,
                       uint8_t nf, uint16_t peak, uint32_t obw);
-    void notify_phone(uint32_t seq, uint32_t obw, int snr);
 
     tl_ui::TLBackdrop backdrop{{0, 0, UI_POS_MAXWIDTH, UI_POS_HEIGHT_REMAINING(1)}};
 

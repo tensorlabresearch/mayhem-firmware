@@ -26,7 +26,6 @@
 #include "portapack.hpp"
 #include "string_format.hpp"
 #include "ui_textentry.hpp"
-#include "usb_serial_asyncmsg.hpp"
 
 using namespace portapack;
 
@@ -266,24 +265,6 @@ bool RFNotebookView::append_event(uint32_t seq, const std::array<uint8_t, rfsk::
     return !f.write_line(j).is_valid();
 }
 
-void RFNotebookView::notify_phone(uint32_t seq, uint32_t obw, int snr) {
-    /* Plan section 10 wants an event.created line pushed to the phone.
-     * NOTE: Mayhem's only app-to-host push is UsbSerialAsyncmsg, whose own
-     * header warns it is "not real async" and that concurrent transmissions
-     * corrupt each other. It is gated behind portapack::async_tx_enabled, which
-     * defaults off, so this is a no-op unless the host explicitly enables it
-     * with `asyncmsg enable`. Treat as provisional: a polled or framed
-     * transport should replace it before the phone side is relied on. */
-    std::string m = "{\"v\":1,\"type\":\"event.created\"";
-    m += ",\"session_id\":\"" + session_id_ + "\"";
-    m += ",\"seq\":" + to_string_dec_uint(seq);
-    m += ",\"freq_hz\":" + to_string_dec_uint(static_cast<uint32_t>(receiver_model.target_frequency()));
-    m += ",\"snr_raw\":" + to_string_dec_uint(static_cast<uint32_t>(snr));
-    m += ",\"obw_hz\":" + to_string_dec_uint(obw);
-    m += ",\"artifact\":\"E" + to_string_dec_uint(seq, 6, '0') + ".rfsk\"}";
-    UsbSerialAsyncmsg::asyncmsg(m);
-}
-
 void RFNotebookView::do_mark() {
     if (!session_ok_) {
         set_status("ERR: no session", false);
@@ -316,11 +297,6 @@ void RFNotebookView::do_mark() {
     }
 
     event_seq_ = seq;
-
-    const uint8_t rssi = (have_rssi_ && rssi_count_)
-                             ? static_cast<uint8_t>(rssi_accum_ / rssi_count_)
-                             : 0;
-    notify_phone(seq, obw, (have_rssi_ && rssi > nf) ? (rssi - nf) : 0);
 
     /* Fresh statistics per event so successive marks do not share numbers. */
     reset_rssi();
