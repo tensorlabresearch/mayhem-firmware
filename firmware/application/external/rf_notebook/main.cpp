@@ -66,9 +66,9 @@ __attribute__((section(".external_app.app_rf_notebook.application_information"),
     /*.menu_location = */ app_location_t::UTILITIES,
     /*.desired_menu_position = */ -1,
 
-    /* Reads receiver_model state and listens for RSSIStatistics if some other
-     * app left a receiver running, but never starts a baseband itself. */
-    /*.m4_app_tag = portapack::spi_flash::image_tag_none */ {0, 0, 0, 0},
+    /* Capture baseband: provides ChannelSpectrum for the .rfsk sketches, and is
+     * the same image a later Level 2 I/Q snippet would need. Receive only. */
+    /*.m4_app_tag = portapack::spi_flash::image_tag_capture */ {'P', 'C', 'A', 'P'},
     /*.m4_app_offset = */ 0x00000000,  // will be filled at compile time
 };
 }

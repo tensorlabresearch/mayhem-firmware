@@ -19,41 +19,35 @@
  * Boston, MA 02110-1301, USA.
  */
 
+/* RF Field Notebook -- PortaPack device side, Milestone 2 of
+ * rf_field_notebook_project_plan.md ("PortaPack manual event capture").
+ *
+ * Scope deliberately limited to the plan's conference MVP: manual MARK creates
+ * an event, metadata is appended to events.jsonl, a .rfsk spectral sketch is
+ * written, and a compact summary is offered to the phone. No scanning, no
+ * automatic detection, no scoring model, no transmit -- those are Milestones 3+
+ * and the plan is explicit that manual capture must be solid first.
+ */
+
 #ifndef _UI_RF_NOTEBOOK
 #define _UI_RF_NOTEBOOK
 
 #include "../tl_common/ui_tl_backdrop.hpp"
 #include "message.hpp"
 #include "receiver_model.hpp"
+#include "rfsk.hpp"
 #include "rtc_time.hpp"
 #include "ui.hpp"
 #include "ui_navigation.hpp"
+#include "ui_receiver.hpp"
 #include "ui_widget.hpp"
 
 namespace ui::external_app::rf_notebook {
 
-/* One observation. Snapshotted at the moment the user logs it, not when the
- * view opened, so the numbers match what they were actually looking at. */
-struct Observation {
-    rtc::RTC when{};
-    rf::Frequency frequency{0};
-    uint32_t bandwidth{0};
-    uint32_t sampling_rate{0};
-    ReceiverModel::Mode modulation{ReceiverModel::Mode::NarrowbandFMAudio};
-    std::string note{};
-
-    /* RSSI is only meaningful while a baseband receiver is actually running.
-     * When nothing is feeding us RSSIStatistics messages, have_rssi stays false
-     * and we record "n/a" rather than a misleading zero. */
-    bool have_rssi{false};
-    uint8_t rssi_min{0};
-    uint8_t rssi_avg{0};
-    uint8_t rssi_max{0};
-};
-
 class RFNotebookView : public View {
    public:
     explicit RFNotebookView(NavigationView& nav);
+    ~RFNotebookView();
 
     void focus() override;
 
@@ -62,58 +56,91 @@ class RFNotebookView : public View {
    private:
     NavigationView& nav_;
 
-    /* Live note text. text_prompt() takes this by reference and needs it to
-     * outlive the entry view, so it must be a member. */
+    /* Session identity. The plan makes the phone the authority on session UUID
+     * and UTC; until it sends one we mint a device-local id from the RTC so the
+     * device is useful standalone (plan section 2.7, graceful disconnection). */
+    std::string session_id_{};
+    std::filesystem::path session_dir_{};
+    uint32_t event_seq_{0};
+    bool session_ok_{false};
+
+    /* Note text for the next MARK. text_prompt() holds this by reference. */
     std::string note_{};
 
-    /* Rolling RSSI, reset each time we log so successive entries do not share
-     * stale statistics. */
+    /* Rolling spectral sketch, fed from ChannelSpectrum. */
+    rfsk::Accumulator sketch_{};
+    bool spectrum_running_{false};
+
+    /* RSSI statistics since the last MARK. */
     bool have_rssi_{false};
     uint8_t rssi_min_{255};
     uint8_t rssi_max_{0};
     uint32_t rssi_accum_{0};
     uint32_t rssi_count_{0};
 
-    Observation snapshot() const;
-    void refresh();
+    bool start_session();
     void reset_rssi();
+    void refresh();
     void set_status(const std::string& msg, bool ok);
-
-    void log_entry();
-    void export_freqman();
+    void do_mark();
+    bool write_sketch(const std::filesystem::path& path, uint32_t seq,
+                      const std::array<uint8_t, rfsk::bins>& avg,
+                      uint8_t nf, uint16_t peak, uint32_t obw);
+    bool append_event(uint32_t seq, const std::array<uint8_t, rfsk::bins>& avg,
+                      uint8_t nf, uint16_t peak, uint32_t obw);
+    void notify_phone(uint32_t seq, uint32_t obw, int snr);
 
     tl_ui::TLBackdrop backdrop{{0, 0, UI_POS_MAXWIDTH, UI_POS_HEIGHT_REMAINING(1)}};
 
-    Text text_freq{{UI_POS_X(0), UI_POS_Y(0), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
-    Text text_mod{{UI_POS_X(0), UI_POS_Y(1), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
-    Text text_rssi{{UI_POS_X(0), UI_POS_Y(2), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
-    Text text_time{{UI_POS_X(0), UI_POS_Y(3), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
-
-    Text text_note_label{{UI_POS_X(0), UI_POS_Y(5), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}, "NOTE"};
-    Text text_note_1{{UI_POS_X(0), UI_POS_Y(6), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
-    Text text_note_2{{UI_POS_X(0), UI_POS_Y(7), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
-
+    Text text_session{{UI_POS_X(0), UI_POS_Y(0), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
+    Text text_freq{{UI_POS_X(0), UI_POS_Y(1), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
+    Text text_signal{{UI_POS_X(0), UI_POS_Y(2), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
+    Text text_sketch{{UI_POS_X(0), UI_POS_Y(3), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
+    Text text_events{{UI_POS_X(0), UI_POS_Y(4), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
+    Text text_note{{UI_POS_X(0), UI_POS_Y(6), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
     Text text_status{{UI_POS_X(0), UI_POS_Y_BOTTOM(7), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
 
-    Button button_note{
+    /* Frequency is editable here so the operator can tune without leaving the
+     * app; it also inherits whatever the radio was already on. */
+    FrequencyField field_frequency{{UI_POS_X(0), UI_POS_Y(5)}};
+
+    Button button_mark{
         {UI_POS_X(0), UI_POS_Y_BOTTOM(6), UI_POS_WIDTH(14), UI_POS_HEIGHT(2)},
-        "Edit Note"};
-    Button button_log{
+        "MARK"};
+    Button button_note{
         {UI_POS_X(16), UI_POS_Y_BOTTOM(6), UI_POS_WIDTH(14), UI_POS_HEIGHT(2)},
-        "Log Entry"};
-    Button button_freqman{
-        {UI_POS_X(0), UI_POS_Y_BOTTOM(3), UI_POS_WIDTH(14), UI_POS_HEIGHT(2)},
-        "To Freqman"};
+        "Note"};
     Button button_close{
         {UI_POS_X(16), UI_POS_Y_BOTTOM(3), UI_POS_WIDTH(14), UI_POS_HEIGHT(2)},
         "Close"};
 
+    /* Spectrum plumbing, mirroring the pattern in ui_spectrum.hpp: the config
+     * message hands us the FIFO, and we drain it on each display frame sync. */
+    ChannelSpectrumFIFO* channel_fifo_{nullptr};
+
+    MessageHandlerRegistration message_handler_spectrum_config{
+        Message::ID::ChannelSpectrumConfig,
+        [this](const Message* const p) {
+            channel_fifo_ = reinterpret_cast<const ChannelSpectrumConfigMessage*>(p)->fifo;
+        }};
+
+    MessageHandlerRegistration message_handler_frame_sync{
+        Message::ID::DisplayFrameSync,
+        [this](const Message* const) {
+            if (channel_fifo_) {
+                ChannelSpectrum s;
+                while (channel_fifo_->out(s)) {
+                    const uint32_t span = s.sampling_rate;
+                    sketch_.push(s.db.data(), s.sampling_rate, span);
+                }
+            }
+        }};
+
     MessageHandlerRegistration message_handler_rssi{
         Message::ID::RSSIStatistics,
         [this](const Message* const p) {
-            const auto& s = static_cast<const RSSIStatisticsMessage*>(p)->statistics;
-            if (s.count == 0)
-                return;
+            const auto& s = reinterpret_cast<const RSSIStatisticsMessage*>(p)->statistics;
+            if (s.count == 0) return;
             have_rssi_ = true;
             if (s.min < rssi_min_) rssi_min_ = s.min;
             if (s.max > rssi_max_) rssi_max_ = s.max;
