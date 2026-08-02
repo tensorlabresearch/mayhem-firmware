@@ -66,9 +66,13 @@ __attribute__((section(".external_app.app_rf_notebook.application_information"),
     /*.menu_location = */ app_location_t::UTILITIES,
     /*.desired_menu_position = */ -1,
 
-    /* Capture baseband: provides ChannelSpectrum for the .rfsk sketches, and is
-     * the same image a later Level 2 I/Q snippet would need. Receive only. */
-    /*.m4_app_tag = portapack::spi_flash::image_tag_capture */ {'P', 'C', 'A', 'P'},
+    /* WFM audio baseband. proc_wfm_audio owns a channel_spectrum collector and
+     * self-configures for normal RX, so ChannelSpectrum actually carries data.
+     * Two wrong turns before this: PCAP has the collector but RecordView is what
+     * feeds it (frames arrived with db[] all zero), and PSPE does not expose it
+     * through this path at all (no frames). WFM has the widest channel filter,
+     * giving the most useful span for a sketch. Receive only. */
+    /*.m4_app_tag = portapack::spi_flash::image_tag_wfm_audio */ {'P', 'W', 'F', 'M'},
     /*.m4_app_offset = */ 0x00000000,  // will be filled at compile time
 };
 }

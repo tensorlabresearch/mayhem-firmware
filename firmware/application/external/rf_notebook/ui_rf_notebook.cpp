@@ -22,6 +22,8 @@
 #include "ui_rf_notebook.hpp"
 
 #include "baseband_api.hpp"
+#include "oversample.hpp"
+#include "ui_spectrum.hpp"
 #include "file.hpp"
 #include "portapack.hpp"
 #include "string_format.hpp"
@@ -44,6 +46,9 @@ constexpr std::u16string_view rfnote_root{u"/RFNOTE"};
 
 /* Bins more than this many dB-units above the noise floor count as occupied. */
 constexpr uint8_t occupancy_margin = 12;
+
+/* Base capture rate; get_actual_sample_rate() applies the oversample factor. */
+constexpr uint32_t sampling_rate = 3'072'000;
 
 std::string two(uint32_t v) { return to_string_dec_uint(v, 2, '0'); }
 
@@ -110,8 +115,16 @@ RFNotebookView::RFNotebookView(NavigationView& nav)
 
     /* Spectrum analysis feeds the sketch. Receive-only: we never configure a
      * transmitter and the app declares no TX baseband. */
-    receiver_model.set_sampling_rate(3'072'000);
-    receiver_model.set_baseband_bandwidth(2'500'000);
+    /* An external app owning a baseband MUST start the M4 image itself. Without
+     * this, receiver_model.enable() and spectrum_streaming_start() block on a
+     * baseband that was never running and the UI thread hangs on launch.
+     * Pattern taken from time_sink, the one external app that consumes
+     * ChannelSpectrum successfully. */
+    baseband::run_prepared_image(portapack::memory::map::m4_code.base());
+
+    receiver_model.set_sampling_rate(sampling_rate);
+    receiver_model.set_baseband_bandwidth(filter_bandwidth_for_sampling_rate(sampling_rate));
+    receiver_model.set_squelch_level(0);
     receiver_model.enable();
     baseband::spectrum_streaming_start();
     spectrum_running_ = true;
@@ -129,6 +142,7 @@ RFNotebookView::~RFNotebookView() {
     if (spectrum_running_)
         baseband::spectrum_streaming_stop();
     receiver_model.disable();
+    baseband::shutdown();
 }
 
 void RFNotebookView::focus() {

@@ -39,6 +39,7 @@
 #define _UI_RF_NOTEBOOK
 
 #include "message.hpp"
+#include "radio_state.hpp"
 #include "receiver_model.hpp"
 #include "rfsk.hpp"
 #include "rtc_time.hpp"
@@ -61,6 +62,16 @@ class RFNotebookView : public View {
    private:
     NavigationView& nav_;
 
+    /* RAII radio ownership, exactly as waterfall_designer does it. Declared
+     * early so it is constructed first and torn down last. Constructing it with
+     * the mode is what was missing: driving receiver_model.enable() raw, without
+     * this, hung the UI thread on app launch. */
+    RxRadioState radio_state_{
+        433'920'000,
+        1'750'000,
+        2'000'000,
+        ReceiverModel::Mode::WidebandFMAudio};
+
     /* Session identity, minted device-local from the RTC. The plan envisaged a
      * companion device supplying a UUID and UTC anchor; with that deferred, the
      * device is the sole authority and the importer keys on this id. */
@@ -75,6 +86,7 @@ class RFNotebookView : public View {
     /* Rolling spectral sketch, fed from ChannelSpectrum. */
     rfsk::Accumulator sketch_{};
     bool spectrum_running_{false};
+    uint32_t ui_tick_{0};
 
     /* RSSI statistics since the last MARK. */
     bool have_rssi_{false};
@@ -135,6 +147,14 @@ class RFNotebookView : public View {
                     const uint32_t span = s.sampling_rate;
                     sketch_.push(s.db.data(), s.sampling_rate, span);
                 }
+            }
+            /* The status lines were previously only redrawn on construction,
+             * frequency change and after MARK, so "sketch filling..." and
+             * "RSSI --" stayed on screen long after both were stale. Refresh
+             * periodically, but not every frame -- that would repaint far more
+             * often than the values change. */
+            if ((++ui_tick_ % 30) == 0) {
+                refresh();
             }
         }};
 
