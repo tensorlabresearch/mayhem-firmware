@@ -38,7 +38,6 @@
 #ifndef _UI_RF_NOTEBOOK
 #define _UI_RF_NOTEBOOK
 
-#include "../tl_common/ui_tl_backdrop.hpp"
 #include "message.hpp"
 #include "receiver_model.hpp"
 #include "rfsk.hpp"
@@ -94,8 +93,6 @@ class RFNotebookView : public View {
                       uint8_t nf, uint16_t peak, uint32_t obw);
     bool append_event(uint32_t seq, const std::array<uint8_t, rfsk::bins>& avg,
                       uint8_t nf, uint16_t peak, uint32_t obw);
-
-    tl_ui::TLBackdrop backdrop{{0, 0, UI_POS_MAXWIDTH, UI_POS_HEIGHT_REMAINING(1)}};
 
     Text text_session{{UI_POS_X(0), UI_POS_Y(0), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
     Text text_freq{{UI_POS_X(0), UI_POS_Y(1), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};

@@ -34,7 +34,13 @@ namespace ui::external_app::rf_notebook {
 namespace {
 
 constexpr size_t note_max_length = 64;
-const std::filesystem::path rfnote_root{u"/RFNOTE"};
+/* MUST NOT be a namespace-scope std::filesystem::path: that has a non-trivial
+ * constructor, which emits a _GLOBAL__sub_I global initialiser inside the app's
+ * fake address region. External apps are loaded from SD as raw relocated blobs
+ * and never run their own C++ start-up, so the firmware calls that constructor
+ * at boot into unmapped memory and dies before USB enumerates. Keep it a
+ * constexpr view and build the path locally at the point of use. */
+constexpr std::u16string_view rfnote_root{u"/RFNOTE"};
 
 /* Bins more than this many dB-units above the noise floor count as occupied. */
 constexpr uint8_t occupancy_margin = 12;
@@ -71,8 +77,7 @@ std::string esc(std::string_view in) {
 
 RFNotebookView::RFNotebookView(NavigationView& nav)
     : nav_{nav} {
-    add_children({&backdrop,
-                  &text_session,
+    add_children({                  &text_session,
                   &text_freq,
                   &text_signal,
                   &text_sketch,
@@ -83,8 +88,6 @@ RFNotebookView::RFNotebookView(NavigationView& nav)
                   &button_mark,
                   &button_note,
                   &button_close});
-
-    backdrop.load_first_of({tl_ui::logo_mid, tl_ui::logo_dim});
 
     /* Inherit whatever the radio is already tuned to, per plan Milestone 2
      * ("User can tune or inherit current frequency"). */
@@ -148,7 +151,7 @@ bool RFNotebookView::start_session() {
     session_id_ = "S" + to_string_dec_uint(now.year(), 4, '0') + two(now.month()) + two(now.day()) +
                   "_" + two(now.hour()) + two(now.minute()) + two(now.second());
 
-    session_dir_ = rfnote_root / session_id_;
+    session_dir_ = std::filesystem::path{rfnote_root} / session_id_;
 
     if (ensure_directory(session_dir_).code()) return false;
     if (ensure_directory(session_dir_ / u"sketches").code()) return false;
