@@ -240,7 +240,7 @@ bool RFNotebookView::write_sketch(const std::filesystem::path& path, uint32_t se
 
     File f;
     if (f.create(path).is_valid()) return false;
-    return !f.write(buf.data(), n).is_error();
+    return !f.write(ser_buf_.data(), n).is_error();
 }
 
 bool RFNotebookView::append_event(uint32_t seq, const std::array<uint8_t, rfsk::bins>& avg,
