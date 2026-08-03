@@ -66,10 +66,14 @@ class RFNotebookView : public View {
      * early so it is constructed first and torn down last. Constructing it with
      * the mode is what was missing: driving receiver_model.enable() raw, without
      * this, hung the UI thread on app launch. */
+    /* Frequency 0 means "keep whatever the radio is already tuned to", so the
+     * operator can set it from Looking Glass, the console (setfreq) or any other
+     * app and this inherits it. Plan Milestone 2: "tune or inherit current
+     * frequency". */
     RxRadioState radio_state_{
-        433'920'000,
+        0,
         1'750'000,
-        2'000'000,
+        3'072'000,
         ReceiverModel::Mode::WidebandFMAudio};
 
     /* Session identity, minted device-local from the RTC. The plan envisaged a
@@ -104,7 +108,8 @@ class RFNotebookView : public View {
                       const std::array<uint8_t, rfsk::bins>& avg,
                       uint8_t nf, uint16_t peak, uint32_t obw);
     bool append_event(uint32_t seq, const std::array<uint8_t, rfsk::bins>& avg,
-                      uint8_t nf, uint16_t peak, uint32_t obw);
+                      uint8_t nf, uint16_t peak, uint32_t obw,
+                      uint8_t nf_s, uint8_t spread_s, uint8_t snr_s);
 
     Text text_session{{UI_POS_X(0), UI_POS_Y(0), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
     Text text_freq{{UI_POS_X(0), UI_POS_Y(1), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
@@ -131,6 +136,18 @@ class RFNotebookView : public View {
     /* Spectrum plumbing, mirroring the pattern in ui_spectrum.hpp: the config
      * message hands us the FIFO, and we drain it on each display frame sync. */
     ChannelSpectrumFIFO* channel_fifo_{nullptr};
+
+    /* Lets the console (setfreq) and, later, a companion device retune the app.
+     * setfreq only broadcasts FreqChangeCommand -- an app must subscribe or it
+     * is a no-op, which is why setfreq appeared to do nothing. */
+    MessageHandlerRegistration message_handler_freqchg{
+        Message::ID::FreqChangeCommand,
+        [this](const Message* const p) {
+            const auto m = static_cast<const FreqChangeCommandMessage*>(p);
+            portapack::receiver_model.set_target_frequency(m->freq);
+            field_frequency.set_value(m->freq);
+            refresh();
+        }};
 
     MessageHandlerRegistration message_handler_spectrum_config{
         Message::ID::ChannelSpectrumConfig,

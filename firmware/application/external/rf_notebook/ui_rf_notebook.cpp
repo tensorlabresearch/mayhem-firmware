@@ -44,9 +44,6 @@ constexpr size_t note_max_length = 64;
  * constexpr view and build the path locally at the point of use. */
 constexpr std::u16string_view rfnote_root{u"/RFNOTE"};
 
-/* Bins more than this many dB-units above the noise floor count as occupied. */
-constexpr uint8_t occupancy_margin = 12;
-
 /* Base capture rate; get_actual_sample_rate() applies the oversample factor. */
 constexpr uint32_t sampling_rate = 3'072'000;
 
@@ -100,6 +97,17 @@ RFNotebookView::RFNotebookView(NavigationView& nav)
     field_frequency.on_change = [this](rf::Frequency f) {
         receiver_model.set_target_frequency(f);
         refresh();
+    };
+    /* Without on_edit the field can only be nudged by the encoder, which is
+     * useless for large jumps (223 MHz -> 2.4 GHz is tens of thousands of
+     * steps). Select now opens the numeric keypad. */
+    field_frequency.on_edit = [this]() {
+        auto keypad = nav_.push<FrequencyKeypadView>(receiver_model.target_frequency());
+        keypad->on_changed = [this](rf::Frequency f) {
+            receiver_model.set_target_frequency(f);
+            field_frequency.set_value(f);
+            refresh();
+        };
     };
 
     button_mark.on_select = [this](Button&) { do_mark(); };
@@ -237,7 +245,8 @@ bool RFNotebookView::write_sketch(const std::filesystem::path& path, uint32_t se
 }
 
 bool RFNotebookView::append_event(uint32_t seq, const std::array<uint8_t, rfsk::bins>& avg,
-                                  uint8_t nf, uint16_t peak, uint32_t obw) {
+                                  uint8_t nf, uint16_t peak, uint32_t obw,
+                                  uint8_t nf_s, uint8_t spread_s, uint8_t snr_s) {
     (void)avg;
     (void)peak;
     const auto now = rtc_time::now();
@@ -248,7 +257,7 @@ bool RFNotebookView::append_event(uint32_t seq, const std::array<uint8_t, rfsk::
     const uint8_t rssi = (have_rssi_ && rssi_count_)
                              ? static_cast<uint8_t>(rssi_accum_ / rssi_count_)
                              : 0;
-    const int snr = (have_rssi_ && rssi > nf) ? (rssi - nf) : 0;
+    (void)nf;
 
     const std::string seqs = to_string_dec_uint(seq, 6, '0');
 
@@ -266,12 +275,15 @@ bool RFNotebookView::append_event(uint32_t seq, const std::array<uint8_t, rfsk::
     j += ",\"sample_rate_sps\":" + to_string_dec_uint(receiver_model.sampling_rate());
     j += ",\"baseband_bandwidth_hz\":" + to_string_dec_uint(receiver_model.baseband_bandwidth());
     if (have_rssi_) {
-        j += ",\"rssi_raw\":" + to_string_dec_uint(rssi);
-        j += ",\"noise_floor_raw\":" + to_string_dec_uint(nf);
-        j += ",\"snr_raw\":" + to_string_dec_uint(static_cast<uint32_t>(snr));
+        j += ",\"rssi_adc_raw\":" + to_string_dec_uint(rssi);
     } else {
-        j += ",\"rssi_raw\":null,\"noise_floor_raw\":null,\"snr_raw\":null";
+        j += ",\"rssi_adc_raw\":null";
     }
+    /* Spectrum-domain figures. Same units as each other and as the .rfsk bins;
+     * deliberately NOT combined with rssi_adc_raw, which is a different scale. */
+    j += ",\"noise_floor_spec\":" + to_string_dec_uint(nf_s);
+    j += ",\"noise_spread_spec\":" + to_string_dec_uint(spread_s);
+    j += ",\"snr_spec\":" + to_string_dec_uint(snr_s);
     j += ",\"occupied_bandwidth_hz\":" + to_string_dec_uint(obw);
     j += ",\"labels\":[\"manual\"]";
     j += ",\"evidence_level\":1";
@@ -298,8 +310,10 @@ void RFNotebookView::do_mark() {
     sketch_.average(avg);
     const uint8_t nf = rfsk::Accumulator::noise_floor(avg);
     const uint16_t peak = rfsk::Accumulator::peak_bin(avg);
-    const uint32_t obw = rfsk::Accumulator::occupied_bandwidth_hz(
-        avg, nf, occupancy_margin, sketch_.span_hz());
+    const uint8_t spread = rfsk::Accumulator::noise_spread(avg);
+    const uint8_t thresh = rfsk::Accumulator::occupancy_threshold(nf, spread);
+    const uint32_t obw = rfsk::Accumulator::occupied_bandwidth_hz(avg, thresh, sketch_.span_hz());
+    const uint8_t sp_snr = rfsk::Accumulator::spectrum_snr(avg, nf);
 
     const auto sketch_name = widen("E" + to_string_dec_uint(seq, 6, '0') + ".rfsk");
     const auto sketch_path = session_dir_ / u"sketches" / std::filesystem::path{sketch_name.c_str()};
@@ -308,7 +322,7 @@ void RFNotebookView::do_mark() {
         set_status("ERR: sketch write failed", false);
         return;
     }
-    if (!append_event(seq, avg, nf, peak, obw)) {
+    if (!append_event(seq, avg, nf, peak, obw, nf, spread, sp_snr)) {
         set_status("ERR: event write failed", false);
         return;
     }

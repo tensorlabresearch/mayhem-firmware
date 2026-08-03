@@ -135,15 +135,48 @@ class Accumulator {
         return idx;
     }
 
-    /* Count of contiguous-ish bins more than `margin` above the noise floor,
-     * converted to Hz. Deliberately crude: it is a bandwidth ESTIMATE and the
-     * plan forbids presenting heuristics as fact. */
+    /* Robust spread of the noise itself: 75th minus 25th percentile of the
+     * averaged spectrum. A fixed margin cannot work -- measured noise spans tens
+     * of units, so any small constant counts ordinary noise excursions as
+     * occupancy (an earlier build reported 12-24 kHz occupied on pure noise). */
+    static uint8_t noise_spread(const std::array<uint8_t, bins>& avg) {
+        std::array<uint8_t, bins> sorted = avg;
+        std::sort(sorted.begin(), sorted.end());
+        const int p25 = sorted[bins / 4];
+        const int p75 = sorted[(bins * 3) / 4];
+        const int d = p75 - p25;
+        return static_cast<uint8_t>(d < 0 ? 0 : (d > 255 ? 255 : d));
+    }
+
+    /* Threshold a bin must exceed to count as occupied: noise floor plus three
+     * times the noise spread, with a floor so a very flat spectrum still needs a
+     * real excursion. */
+    static uint8_t occupancy_threshold(uint8_t nf, uint8_t spread) {
+        const int t = static_cast<int>(nf) + 3 * static_cast<int>(spread);
+        const int minimum = static_cast<int>(nf) + 8;
+        const int v = t > minimum ? t : minimum;
+        return static_cast<uint8_t>(v > 255 ? 255 : v);
+    }
+
+    /* Count of bins above the threshold, converted to Hz. Still an ESTIMATE;
+     * plan section 6 forbids presenting heuristics as fact. */
     static uint32_t occupied_bandwidth_hz(const std::array<uint8_t, bins>& avg,
-                                          uint8_t nf, uint8_t margin, uint32_t span_hz) {
+                                          uint8_t threshold, uint32_t span_hz) {
         size_t n = 0;
         for (size_t b = 0; b < bins; b++)
-            if (avg[b] > nf + margin) n++;
+            if (avg[b] > threshold) n++;
         return static_cast<uint32_t>((static_cast<uint64_t>(span_hz) * n) / bins);
+    }
+
+    /* SNR measured entirely inside the spectrum domain: strongest bin minus the
+     * noise floor, both in the same log-magnitude units. Do NOT mix this with
+     * rssi_raw, which comes from the RSSI ADC on a different scale -- subtracting
+     * the two is meaningless and previously always clamped to zero. */
+    static uint8_t spectrum_snr(const std::array<uint8_t, bins>& avg, uint8_t nf) {
+        uint8_t peak = 0;
+        for (size_t b = 0; b < bins; b++)
+            if (avg[b] > peak) peak = avg[b];
+        return peak > nf ? static_cast<uint8_t>(peak - nf) : 0;
     }
 
     /* Serialises header + avg[64] + matrix[16][64] + CRC32 into `out`.
