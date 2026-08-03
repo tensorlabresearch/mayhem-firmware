@@ -235,8 +235,7 @@ bool RFNotebookView::write_sketch(const std::filesystem::path& path, uint32_t se
         hdr.snr_db = static_cast<int16_t>(r > nf ? r - nf : 0);
     }
 
-    static std::array<uint8_t, rfsk::Accumulator::serialized_size> buf{};
-    const size_t n = sketch_.serialize(hdr, avg, buf.data(), buf.size());
+    const size_t n = sketch_.serialize(hdr, avg, ser_buf_.data(), ser_buf_.size());
     if (n == 0) return false;
 
     File f;

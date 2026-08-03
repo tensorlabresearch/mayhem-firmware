@@ -89,6 +89,12 @@ class RFNotebookView : public View {
 
     /* Rolling spectral sketch, fed from ChannelSpectrum. */
     rfsk::Accumulator sketch_{};
+
+    /* Serialisation scratch as a MEMBER, not a function-local static. A
+     * function-local static would need __cxa_guard_acquire, and external apps
+     * never run C++ start-up -- the same class of hazard as the namespace-scope
+     * path that bricked boot. Keep all storage in the object. */
+    std::array<uint8_t, rfsk::Accumulator::serialized_size> ser_buf_{};
     bool spectrum_running_{false};
     uint32_t ui_tick_{0};
 
