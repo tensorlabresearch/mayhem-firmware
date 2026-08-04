@@ -98,6 +98,18 @@ class RFNotebookView : public View {
     bool spectrum_running_{false};
     uint32_t ui_tick_{0};
 
+    /* Milestone 3: fixed-frequency automatic detection. */
+    rfsk::Detector detector_{};
+    bool auto_armed_{false};
+    uint32_t auto_events_{0};
+    uint32_t last_auto_ms_{0};
+    uint8_t last_score_{0};
+    /* Per-channel cooldown. Without this a persistent carrier writes an event on
+     * every evaluation and floods the log -- the false-positive failure the plan
+     * warns about in section 19. */
+    static constexpr uint32_t cooldown_ms = 5000;
+    void evaluate_auto();
+
     /* RSSI statistics since the last MARK. */
     bool have_rssi_{false};
     uint8_t rssi_min_{255};
@@ -109,25 +121,34 @@ class RFNotebookView : public View {
     void reset_rssi();
     void refresh();
     void set_status(const std::string& msg, bool ok);
-    void do_mark();
+    void do_mark(bool automatic, uint8_t score,
+                 bool narrowband, bool wideband, uint8_t persist);
     bool write_sketch(const std::filesystem::path& path, uint32_t seq,
                       const std::array<uint8_t, rfsk::bins>& avg,
                       uint8_t nf, uint16_t peak, uint32_t obw);
     bool append_event(uint32_t seq, const std::array<uint8_t, rfsk::bins>& avg,
                       uint8_t nf, uint16_t peak, uint32_t obw,
-                      uint8_t nf_s, uint8_t spread_s, uint8_t snr_s);
+                      uint8_t nf_s, uint8_t spread_s, uint8_t snr_s,
+                      bool automatic, uint8_t score,
+                      bool narrowband, bool wideband, uint8_t persist);
 
     Text text_session{{UI_POS_X(0), UI_POS_Y(0), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
     Text text_freq{{UI_POS_X(0), UI_POS_Y(1), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
     Text text_signal{{UI_POS_X(0), UI_POS_Y(2), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
     Text text_sketch{{UI_POS_X(0), UI_POS_Y(3), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
     Text text_events{{UI_POS_X(0), UI_POS_Y(4), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
-    Text text_note{{UI_POS_X(0), UI_POS_Y(6), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
+    Text text_auto{{UI_POS_X(0), UI_POS_Y(6), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
+    Text text_note{{UI_POS_X(0), UI_POS_Y(7), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
     Text text_status{{UI_POS_X(0), UI_POS_Y_BOTTOM(7), UI_POS_MAXWIDTH, UI_POS_HEIGHT(1)}};
 
     /* Frequency is editable here so the operator can tune without leaving the
      * app; it also inherits whatever the radio was already on. */
     FrequencyField field_frequency{{UI_POS_X(0), UI_POS_Y(5)}};
+
+    Checkbox checkbox_auto{
+        {UI_POS_X(0), UI_POS_Y_BOTTOM(9)},
+        11,
+        "Auto-detect"};
 
     Button button_mark{
         {UI_POS_X(0), UI_POS_Y_BOTTOM(6), UI_POS_WIDTH(14), UI_POS_HEIGHT(2)},
@@ -177,6 +198,7 @@ class RFNotebookView : public View {
              * periodically, but not every frame -- that would repaint far more
              * often than the values change. */
             if ((++ui_tick_ % 30) == 0) {
+                evaluate_auto();
                 refresh();
             }
         }};

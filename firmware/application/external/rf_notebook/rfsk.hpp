@@ -230,6 +230,112 @@ class Accumulator {
     uint32_t sample_rate_{0};
 };
 
+/* Fixed-frequency automatic detection -- plan Milestone 3.
+ *
+ * Learns a per-bin baseline of what "normal" looks like on this channel, then
+ * fires when the live spectrum stands out from that baseline. Integer maths and
+ * fixed arrays only: the app has ~4.8KB of its 32KB region left, and external
+ * apps cannot grow past that because the image is copied into real SRAM.
+ *
+ * The baseline is only updated while NOT triggered. Learning through a live
+ * signal would fold that signal into "normal" and the detector would go blind
+ * to exactly the thing it is meant to find. */
+class Detector {
+   public:
+    /* Evaluations to observe before detection is allowed to fire. */
+    static constexpr uint16_t learn_passes = 8;
+    /* Bins must exceed baseline by at least this to count, regardless of spread. */
+    static constexpr uint8_t min_excess = 10;
+    /* Minimum bins over threshold for a trigger -- rejects single-bin spurs,
+     * which the plan explicitly lists as something to penalise. */
+    static constexpr uint8_t min_bins = 2;
+
+    struct Verdict {
+        bool trigger{false};
+        uint8_t peak_excess{0};  // strongest bin above baseline
+        uint8_t bins_over{0};    // how many bins are over threshold
+        uint8_t score{0};        // 0..100, transparent and additive
+        bool wideband{false};
+        bool narrowband{false};
+        bool overload{false};    // nearly everything is hot: front-end saturation
+    };
+
+    void reset() {
+        baseline_.fill(0);
+        passes_ = 0;
+        persist_ = 0;
+    }
+
+    bool learning() const { return passes_ < learn_passes; }
+    uint16_t passes() const { return passes_; }
+    uint8_t persistence() const { return persist_; }
+
+    /* Exponential moving average, shift-based so there is no division.
+     * First pass seeds directly so the baseline does not have to climb from 0. */
+    void observe(const std::array<uint8_t, bins>& cur) {
+        if (passes_ == 0) {
+            baseline_ = cur;
+        } else {
+            for (size_t b = 0; b < bins; b++)
+                baseline_[b] = static_cast<uint8_t>((baseline_[b] * 7 + cur[b]) / 8);
+        }
+        if (passes_ < 0xFFFF) passes_++;
+    }
+
+    Verdict evaluate(const std::array<uint8_t, bins>& cur) {
+        Verdict v{};
+        if (learning()) return v;
+
+        /* Threshold per bin: baseline plus the larger of min_excess and three
+         * times the baseline's own spread. Same reasoning as the occupancy
+         * threshold -- a fixed offset cannot survive real noise. */
+        const uint8_t spread = Accumulator::noise_spread(baseline_);
+        const int thr = 3 * static_cast<int>(spread);
+        const int need = thr > static_cast<int>(min_excess) ? thr : static_cast<int>(min_excess);
+
+        int peak = 0;
+        uint8_t over = 0;
+        for (size_t b = 0; b < bins; b++) {
+            const int excess = static_cast<int>(cur[b]) - static_cast<int>(baseline_[b]);
+            if (excess > need) over++;
+            if (excess > peak) peak = excess;
+        }
+
+        v.peak_excess = static_cast<uint8_t>(peak < 0 ? 0 : (peak > 255 ? 255 : peak));
+        v.bins_over = over;
+        v.narrowband = over > 0 && over <= 4;
+        v.wideband = over >= 16;
+        /* Almost every bin hot is not a discovery, it is the front end being
+         * driven into compression. Plan section 6 says penalise this. */
+        v.overload = over >= (bins * 3) / 4;
+
+        v.trigger = (over >= min_bins) && !v.overload;
+
+        if (v.trigger) {
+            if (persist_ < 255) persist_++;
+        } else {
+            persist_ = 0;
+        }
+
+        /* Additive score, capped. Deliberately explainable rather than tuned:
+         * strength, then width, then how long it has stuck around. */
+        int sc = 0;
+        sc += (v.peak_excess > 60 ? 60 : v.peak_excess);          // up to 60
+        sc += (over > 20 ? 20 : over);                            // up to 20
+        sc += (persist_ > 20 ? 20 : persist_);                    // up to 20
+        if (v.overload) sc = 0;
+        v.score = static_cast<uint8_t>(sc > 100 ? 100 : sc);
+        return v;
+    }
+
+    const std::array<uint8_t, bins>& baseline() const { return baseline_; }
+
+   private:
+    std::array<uint8_t, bins> baseline_{};
+    uint16_t passes_{0};
+    uint8_t persist_{0};
+};
+
 }  // namespace rfsk
 
 #endif /*_RFSK_H*/
