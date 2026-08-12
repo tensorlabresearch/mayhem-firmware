@@ -79,16 +79,14 @@ std::string esc(std::string_view in) {
 
 RFNotebookView::RFNotebookView(NavigationView& nav)
     : nav_{nav} {
-    add_children({&text_session,
+    add_children({                  &text_session,
                   &text_freq,
                   &text_signal,
                   &text_sketch,
                   &text_events,
                   &field_frequency,
-                  &text_auto,
                   &text_note,
                   &text_status,
-                  &checkbox_auto,
                   &button_mark,
                   &button_note,
                   &button_close});
@@ -112,13 +110,7 @@ RFNotebookView::RFNotebookView(NavigationView& nav)
         };
     };
 
-    checkbox_auto.on_select = [this](Checkbox&, bool v) {
-        auto_armed_ = v;
-        if (v) detector_.reset();  // relearn the baseline each time it is armed
-        refresh();
-    };
-
-    button_mark.on_select = [this](Button&) { do_mark(false, 0, false, false, 0); };
+    button_mark.on_select = [this](Button&) { do_mark(); };
 
     button_note.on_select = [this](Button&) {
         text_prompt(nav_, note_, note_max_length, ENTER_KEYBOARD_MODE_ALPHA,
@@ -216,48 +208,8 @@ void RFNotebookView::refresh() {
 
     text_sketch.set(sketch_.has_data() ? "sketch ready" : "sketch filling...");
     text_events.set("events " + to_string_dec_uint(event_seq_));
-    if (!auto_armed_) {
-        text_auto.set("auto: off");
-    } else if (detector_.learning()) {
-        text_auto.set("auto: learning " + to_string_dec_uint(detector_.passes()) +
-                      "/" + to_string_dec_uint(rfsk::Detector::learn_passes));
-    } else {
-        text_auto.set("auto: armed  hits " + to_string_dec_uint(auto_events_) +
-                      "  score " + to_string_dec_uint(last_score_));
-    }
     text_note.set(note_.empty() ? "note: (none)" : "note: " + note_.substr(0, 26));
     set_dirty();
-}
-
-/* Runs on the same throttled tick as the UI refresh (~every 30 frames). Learns
- * a baseline first, then compares live spectrum against it and auto-marks. */
-void RFNotebookView::evaluate_auto() {
-    if (!auto_armed_ || !session_ok_ || !sketch_.has_data()) return;
-
-    std::array<uint8_t, rfsk::bins> cur{};
-    sketch_.average(cur);
-
-    const auto v = detector_.evaluate(cur);
-    last_score_ = v.score;
-
-    /* Only fold the current spectrum into the baseline when nothing is firing.
-     * Learning through a live signal would make it part of "normal" and the
-     * detector would go blind to it. */
-    if (!v.trigger) {
-        detector_.observe(cur);
-        return;
-    }
-
-    const uint32_t now_ms = chTimeNow();
-    if (last_auto_ms_ != 0 && (now_ms - last_auto_ms_) < cooldown_ms) {
-        /* Suppressed, not lost: the plan wants duplicates held down without
-         * hiding that a signal is still present. */
-        set_status("dup suppressed (score " + to_string_dec_uint(v.score) + ")", true);
-        return;
-    }
-
-    last_auto_ms_ = now_ms;
-    do_mark(true, v.score, v.narrowband, v.wideband, detector_.persistence());
 }
 
 void RFNotebookView::set_status(const std::string& msg, bool ok) {
@@ -293,9 +245,7 @@ bool RFNotebookView::write_sketch(const std::filesystem::path& path, uint32_t se
 
 bool RFNotebookView::append_event(uint32_t seq, const std::array<uint8_t, rfsk::bins>& avg,
                                   uint8_t nf, uint16_t peak, uint32_t obw,
-                                  uint8_t nf_s, uint8_t spread_s, uint8_t snr_s,
-                                  bool automatic, uint8_t score,
-                                  bool narrowband, bool wideband, uint8_t persist) {
+                                  uint8_t nf_s, uint8_t spread_s, uint8_t snr_s) {
     (void)avg;
     (void)peak;
     const auto now = rtc_time::now();
@@ -334,19 +284,7 @@ bool RFNotebookView::append_event(uint32_t seq, const std::array<uint8_t, rfsk::
     j += ",\"noise_spread_spec\":" + to_string_dec_uint(spread_s);
     j += ",\"snr_spec\":" + to_string_dec_uint(snr_s);
     j += ",\"occupied_bandwidth_hz\":" + to_string_dec_uint(obw);
-    /* Labels are descriptive only. Per plan section 6, digital_candidate would
-     * mean "worth later digital analysis", never a protocol identification, so
-     * it is not emitted here at all -- nothing measured justifies it yet. */
-    j += ",\"labels\":[";
-    j += automatic ? "\"auto\"" : "\"manual\"";
-    if (narrowband) j += ",\"narrowband_activity\"";
-    if (wideband) j += ",\"wideband_activity\"";
-    if (persist >= 3) j += ",\"persistent_carrier\"";
-    else if (automatic) j += ",\"burst_candidate\"";
-    j += "]";
-    j += ",\"detector\":\"" + std::string(automatic ? "auto" : "manual") + "\"";
-    j += ",\"interestingness_score\":" + to_string_dec_uint(score);
-    j += ",\"persistence_passes\":" + to_string_dec_uint(persist);
+    j += ",\"labels\":[\"manual\"]";
     j += ",\"evidence_level\":1";
     j += ",\"spectral_sketch\":\"sketches/E" + seqs + ".rfsk\"";
     j += ",\"note\":\"" + esc(note_) + "\"";
@@ -355,8 +293,7 @@ bool RFNotebookView::append_event(uint32_t seq, const std::array<uint8_t, rfsk::
     return !f.write_line(j).is_valid();
 }
 
-void RFNotebookView::do_mark(bool automatic, uint8_t score,
-                             bool narrowband, bool wideband, uint8_t persist) {
+void RFNotebookView::do_mark() {
     if (!session_ok_) {
         set_status("ERR: no session", false);
         return;
@@ -384,8 +321,7 @@ void RFNotebookView::do_mark(bool automatic, uint8_t score,
         set_status("ERR: sketch write failed", false);
         return;
     }
-    if (!append_event(seq, avg, nf, peak, obw, nf, spread, sp_snr,
-                      automatic, score, narrowband, wideband, persist)) {
+    if (!append_event(seq, avg, nf, peak, obw, nf, spread, sp_snr)) {
         set_status("ERR: event write failed", false);
         return;
     }
@@ -394,9 +330,8 @@ void RFNotebookView::do_mark(bool automatic, uint8_t score,
 
     /* Fresh statistics per event so successive marks do not share numbers. */
     reset_rssi();
-    if (automatic) auto_events_++;
     refresh();
-    set_status((automatic ? "AUTO E" : "marked E") + to_string_dec_uint(seq, 6, '0'), true);
+    set_status("marked E" + to_string_dec_uint(seq, 6, '0'), true);
 }
 
 }  // namespace ui::external_app::rf_notebook
