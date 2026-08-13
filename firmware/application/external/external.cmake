@@ -245,6 +245,21 @@ set(EXTCPPSRC
 	external/tl_logo/main.cpp
 	external/tl_logo/ui_tl_logo.cpp
 
+
+	#Tensor Lab hunt/monitor modules
+	#tl_fox24
+	external/tl_fox24/main.cpp
+	external/tl_fox24/ui_tl_fox24.cpp
+	#tl_fox5
+	external/tl_fox5/main.cpp
+	external/tl_fox5/ui_tl_fox5.cpp
+	#tl_foxham
+	external/tl_foxham/main.cpp
+	external/tl_foxham/ui_tl_foxham.cpp
+	#tl_btmon
+	external/tl_btmon/main.cpp
+	external/tl_btmon/ui_tl_btmon.cpp
+
 	#rf_notebook (RF Field Notebook - manual event capture)
 	external/rf_notebook/main.cpp
 	external/rf_notebook/ui_rf_notebook.cpp
@@ -438,6 +453,10 @@ set(EXTAPPLIST
 	level
 	tl_logo
 	rf_notebook
+	tl_fox24
+	tl_fox5
+	tl_foxham
+	tl_btmon
 	gfxeq
 	waterfall_designer
 	detector_rx

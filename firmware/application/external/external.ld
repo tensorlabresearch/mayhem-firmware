@@ -115,6 +115,10 @@ MEMORY
     ram_external_app_signal_hunter         (rwx) : org = 0xAE0B0000, len = 32k
     ram_external_app_tetra_rx              (rwx) : org = 0xAE0C0000, len = 32k
     ram_external_app_tl_logo               (rwx) : org = 0xAE0D0000, len = 32k
+    ram_external_app_tl_fox24              (rwx) : org = 0xAE0E0000, len = 32k
+    ram_external_app_tl_fox5               (rwx) : org = 0xAE0F0000, len = 32k
+    ram_external_app_tl_foxham             (rwx) : org = 0xAE100000, len = 32k
+    ram_external_app_tl_btmon              (rwx) : org = 0xAE110000, len = 32k
     ram_external_app_rf_notebook           (rwx) : org = 0xADDE0000, len = 32k
 }
 
@@ -671,6 +675,30 @@ SECTIONS
         KEEP(*(.external_app.app_tl_logo.application_information));
         *(*ui*external_app*tl_logo*);
     } > ram_external_app_tl_logo
+
+    .external_app_tl_fox24 : ALIGN(4) SUBALIGN(4)
+    {
+        KEEP(*(.external_app.app_tl_fox24.application_information));
+        *(*ui*external_app*tl_fox24*);
+    } > ram_external_app_tl_fox24
+
+    .external_app_tl_fox5 : ALIGN(4) SUBALIGN(4)
+    {
+        KEEP(*(.external_app.app_tl_fox5.application_information));
+        *(*ui*external_app*tl_fox5*);
+    } > ram_external_app_tl_fox5
+
+    .external_app_tl_foxham : ALIGN(4) SUBALIGN(4)
+    {
+        KEEP(*(.external_app.app_tl_foxham.application_information));
+        *(*ui*external_app*tl_foxham*);
+    } > ram_external_app_tl_foxham
+
+    .external_app_tl_btmon : ALIGN(4) SUBALIGN(4)
+    {
+        KEEP(*(.external_app.app_tl_btmon.application_information));
+        *(*ui*external_app*tl_btmon*);
+    } > ram_external_app_tl_btmon
 
     .external_app_rf_notebook : ALIGN(4) SUBALIGN(4)
     {
