@@ -162,9 +162,13 @@ A **hang** (device still enumerates, console dead) only needs a power cycle. A
 - `ThemeTensorLab` (ThemeId 6) from the brand palette: `#050203` ground,
   `#b61225`/`#ef233c` accents, `#fff5ef` ink.
 - **Patched in BOTH theme implementations.** `firmware/standalone/common/ui/theme.cpp`
-  is a parallel duplicate compiled into external `.ppma` apps, and its
-  `SetTheme()` falls through to `ThemeDefault` on an unknown id. Patching only
-  the application copy leaves every external app rendering in default grey.
+  is a parallel duplicate with its own `ThemeId` enum, and its `SetTheme()` falls
+  through to `ThemeDefault` on an unknown id.
+  **CORRECTION:** commit `6a05f6c` claimed that copy is compiled into external
+  `.ppma` apps. That is wrong — it serves **standalone `.ppmp` apps**
+  (`firmware/standalone/`, examples `digitalrain` and `pacman`). Patching it was
+  still right, and now matters more than expected: MDK modules are standalone
+  apps, so this copy is what brands them. See `TENSORLAB_ROADMAP.md` §2.
   The two copies are **not source-compatible**: standalone declares fonts as
   *functions* (`font::fixed_8x16()`).
 - `ok_dark`, `warning_dark`, `fg_green` and `status_active` are deliberately left
